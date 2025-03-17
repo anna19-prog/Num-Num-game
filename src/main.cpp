@@ -15,6 +15,7 @@ struct FallingObject {
 	float y;
     float speed;
     Texture2D picture;
+    bool active = 1;
 };
 
 FallingObject CreateFallingObject(Texture2D pic) {
@@ -28,13 +29,12 @@ FallingObject CreateFallingObject(Texture2D pic) {
 
 int main() {
     srand(time(0));
-    long long framesCounter = 0;
 
-    typedef enum GameScreen { RULES, MAC, SURF, POKRA, EXIT } GameScreen;
+    typedef enum GameScreen { RULES, MAC, GROWING, SURF, POKRA, EXIT } GameScreen;
     InitWindow(screenWidth, screenHeight, "kto kak rabotaet, tot tak i est"); // минута философии
-    SetTargetFPS(60);
     GameScreen currentScreen = RULES;
-
+    SetTargetFPS(60);
+    long long framesCounter = 0;
 
 	Texture2D IlyaPicture = LoadTexture("src/pictures/photoIlya.jpg");
 	Texture2D BurgerPicture = LoadTexture("src/pictures/Burger.png");
@@ -46,67 +46,89 @@ int main() {
     int score = 0;
     float iluhaX = screenWidth / 2 - playerWidth / 2;
     const float playerSpeed = 300.0f;
+    float scale = 0.01; // чтобы скейлить картинку когда растём
     
     std::vector<FallingObject> objects;
-    FallingObject b = CreateFallingObject(BurgerPicture); //Тут бургер уже успешно создан
-    objects.push_back(b);
+    //FallingObject b = CreateFallingObject(BurgerPicture); //Тут бургер уже успешно создан
+    //objects.push_back(b);
     
-    while (!WindowShouldClose()) {
+    bool running = true;
+    while (running) {
         float dt = GetFrameTime();  // Время кадра (нужно для плавного движения)
         BeginDrawing();
         ClearBackground(RAYWHITE);
-
-        framesCounter = (framesCounter + 1) % 1000;
         switch (currentScreen) 
         {
             case RULES:
             {
+                framesCounter++;
                 if (framesCounter > 300)
                 {
+                    framesCounter = 0;
                     currentScreen = MAC;
                 }
-                DrawText("MEOW MEOW THIS IS THE RULES", 20, 20, 40, LIGHTGRAY);
+                DrawText("ILYA NUM-NUM GAME \n IT IS NOT FOR THE WEAK", 20, 20, 40, LIGHTGRAY);
             } break;
             case MAC: // мы в маке
             {
+                framesCounter++;
                 if (IsKeyDown(KEY_LEFT) && iluhaX > 0) {
                     iluhaX -= playerSpeed * dt;
                 }
                 
                 else if (IsKeyDown(KEY_RIGHT) && iluhaX < screenWidth - playerWidth) {
                     iluhaX += playerSpeed * dt;
-                }
-                    
+                }   
         
                 for (auto& burger: objects) { // обновляем все падающие бургеры
-                    burger.y += burger.speed * dt;
+                    if (burger.active) {
+                        burger.y += burger.speed * dt;
         
-                    if ((burger.y + fallingHeight >= screenHeight - playerHeight) &&
-                    (burger.x + fallingWidth >= iluhaX) &&
-                    (burger.x <= iluhaX + playerWidth)) {
-                        score++;
-                        FallingObject temp_burger = CreateFallingObject(BurgerPicture);
-                        objects.push_back(temp_burger);
+                        if ((burger.y + fallingHeight >= screenHeight - playerHeight) &&
+                        (burger.x + fallingWidth >= iluhaX) &&
+                        (burger.x <= iluhaX + playerWidth)) {
+                            score++;
+                            burger.active = 0; 
+                        }
+            
+                        // Если объект улетел вниз — создаём новый
+                        // if (burger.y > screenHeight) {
+                        //     FallingObject temp_burger = CreateFallingObject(BurgerPicture);
+                        //     objects.push_back(temp_burger);
+                        // }
                     }
-        
-                    // Если объект улетел вниз — создаём новый
-                    if (burger.y > screenHeight) {
-                        FallingObject temp_burger = CreateFallingObject(BurgerPicture);
-                        objects.push_back(temp_burger);
-                    }
+                }
+
+                if (framesCounter > 90) {
+                    framesCounter = 0;
+                    FallingObject temp_burger = CreateFallingObject(BurgerPicture);
+                    objects.push_back(temp_burger);
                 }
 
                 if (score == 10) {
-                    currentScreen = SURF;
+                    framesCounter = 0;
+                    currentScreen = GROWING;
                 }
 
                 DrawTexture(background, 0, 0, WHITE);
-                DrawText(TextFormat("Score: %d", score), 20, 20, 20, DARKGRAY);
+                DrawText(TextFormat("Score: %d", score), 20, 20, 30, WHITE);
                 DrawTexture(IlyaPicture, iluhaX, screenHeight - playerHeight, WHITE);
-                for (auto& burger: objects) DrawTexture(burger.picture, burger.x, burger.y, WHITE);
+                for (auto& burger: objects) if (burger.active) DrawTexture(burger.picture, burger.x, burger.y, WHITE);
 
             } break;
-            case SURF: //мы в сёрфе
+            case GROWING:
+            {   
+                framesCounter++;
+                DrawRectangle(0, 0, screenWidth, screenHeight, BLACK);
+                DrawText("HE'S GROWING", 20, 20, 50, DARKGRAY);
+                DrawTextureEx(IlyaPicture, (Vector2){screenWidth / 4, screenHeight / 4}, 0.0f, scale, WHITE);
+                if (framesCounter > 600) {
+                    currentScreen = SURF;
+                    framesCounter = 0;
+                }
+                scale += 0.01;
+            } break;
+            case SURF: // мы в сёрфе
             {
                 if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
                 {
@@ -115,6 +137,7 @@ int main() {
                 DrawRectangle(0, 0, screenWidth, screenHeight, PURPLE);
                 DrawText("GAMEPLAY SCREEN", 20, 20, 40, MAROON);
                 DrawText("PRESS ENTER or TAP to JUMP to ENDING SCREEN", 130, 220, 20, MAROON);
+                framesCounter = 0;
             } break;
             case POKRA: // мы на покре
             {
@@ -124,12 +147,14 @@ int main() {
                 DrawRectangle(0, 0, screenWidth, screenHeight, BLUE);
                 DrawText("ENDING SCREEN", 20, 20, 40, DARKBLUE);
                 DrawText("PRESS ENTER or TAP to RETURN to TITLE SCREEN", 120, 220, 20, DARKBLUE);
+                framesCounter = 0;
 
             } break;
             case EXIT: //гейм овер
             {
-                if (framesCounter % 500 == 0) {
-                    break;
+                framesCounter++;
+                if (framesCounter > 300) {
+                    running = false;
                 }
                 DrawText("GAME OVER", 20, 20, 40, DARKGREEN);
             }
