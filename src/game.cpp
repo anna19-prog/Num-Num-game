@@ -26,7 +26,7 @@ void Player::update(float delta_time)
      scale+=0.03;
  }
 
- Food::Food(int w, int h, Texture2D pic) : Object(w, h, pic) 
+ Food::Food(int w, int h, Texture2D pic, float a) : Object(w, h, pic) 
  {
     speed = rand() % 100 + 200.0f;
     width = w;
@@ -34,9 +34,11 @@ void Player::update(float delta_time)
     pos = {static_cast<float>(rand() % (screenWidth - width)), 0};
     picture = pic;
     active = 1;
+    accelaration = a;
+
  }
 
- void Food::update(float delta_time, Player Ilya, int& score) {
+ void Food::update(float delta_time, Player& Ilya, int& score) {
     if (active) {
         pos.y += speed * delta_time;
 
@@ -44,7 +46,8 @@ void Player::update(float delta_time)
         (pos.x + width >= Ilya.pos.x) &&
         (pos.x <= Ilya.pos.x + Ilya.width)) {
             score++;
-            active = 0; 
+            active = 0;
+            Ilya.speed += accelaration; 
         }
 
         if (pos.y > screenHeight && active) {

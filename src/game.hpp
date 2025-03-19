@@ -34,7 +34,8 @@ class Food : public Object
 {
 public:
     bool active;
+    float accelaration; // ускорение которое будет придавать кофе
 
-    Food(int w, int h, Texture2D pic);
-    void update(float delta_time, Player Ilya, int& score);
+    Food(int w, int h, Texture2D pic, float a);
+    void update(float delta_time, Player& Ilya, int& score);
 };
