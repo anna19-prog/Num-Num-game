@@ -1,30 +1,18 @@
 #include "raylib.h"
 #include <iostream>
+#include <string>
 #include <vector>
 #include <ctime> //используем эту библиотеку так как встроенная функция rand выдает псевдослучайные числа,
                 // которые на самом деле они и те же (мы же устанавливаем нулевое стартовое число и каждай раз получаем разный рандом srand(time(0));)
-const int screenWidth = 800;
-const int screenHeight = 600;
-const int playerWidth = 100;
-const int playerHeight = 100;
-const int fallingWidth = 60;
-const int fallingHeight = 60;
 
-struct FallingObject {
-    float x;
-	float y;
-    float speed;
-    Texture2D picture;
-    bool active = 1;
-};
+#include <game.hpp>
 
-FallingObject CreateFallingObject(Texture2D pic) {
-    FallingObject obj;
-    obj.x = rand() % (screenWidth - fallingWidth); // мудрая техника вычисления рандома в опр диапазоне
-    obj.y = 0;
-    obj.speed = rand() % 100 + 200.0f;
-    obj.picture = pic;
-    return obj;
+
+Texture2D get_pic(int width, int height, const char* path_) { // загрузка картинок
+    Image temp = LoadImage(path_);
+    ImageResize(&temp, width, height);
+    Texture2D picture = LoadTextureFromImage(temp);
+    return picture;
 }
 
 int main() {
@@ -36,24 +24,21 @@ int main() {
     SetTargetFPS(60);
     long long framesCounter = 0;
 
-	Texture2D IlyaPicture = LoadTexture("src/pictures/photoIlya.jpg");
-	Texture2D BurgerPicture = LoadTexture("src/pictures/Burger.png");
+    int playerWidth = 100;
+    int playerHeight = 100;
+    Texture2D IlyaPicture = get_pic(playerWidth, playerHeight, "src/pictures/photoIlya.jpg"); // картинка персонажа
+    Texture2D BurgerPicture = get_pic(60, 60, "src/pictures/Burger.png"); // картинка бургера
+    Texture2D background = get_pic(screenWidth, screenHeight, "src/pictures/mac.png"); // картинка мак
 
-    Image background1 = LoadImage("src/pictures/mac.png");
-    ImageResize(&background1, screenWidth, screenHeight);
-    Texture2D background = LoadTextureFromImage(background1);
+    Player Ilya(300.0f, playerWidth, playerHeight, (Vector2){static_cast<float>(screenWidth / 2 - playerWidth / 2), 
+        static_cast<float>(screenHeight - playerHeight)}, IlyaPicture);
 
     int score = 0;
-    float iluhaX = screenWidth / 2 - playerWidth / 2;
-    const float playerSpeed = 300.0f;
-    float scale = 0.01; // чтобы скейлить картинку когда растём
     
-    std::vector<FallingObject> objects;
-    //FallingObject b = CreateFallingObject(BurgerPicture); //Тут бургер уже успешно создан
-    //objects.push_back(b);
+    std::vector<Food> objects; // все наши падающие объекты
     
     bool running = true;
-    while (running) {
+    while (running && !WindowShouldClose()) {
         float dt = GetFrameTime();  // Время кадра (нужно для плавного движения)
         BeginDrawing();
         ClearBackground(RAYWHITE);
@@ -61,47 +46,23 @@ int main() {
         {
             case RULES:
             {
-                framesCounter++;
-                if (framesCounter > 300)
-                {
-                    framesCounter = 0;
+                if (IsKeyDown(KEY_ENTER)) {
                     currentScreen = MAC;
                 }
-                DrawText("ILYA NUM-NUM GAME \n IT IS NOT FOR THE WEAK", 20, 20, 40, LIGHTGRAY);
+                DrawText("ILYA NUM-NUM GAME \n IT IS NOT FOR THE WEAK\n\neat burgers in order for Ilya to grow", 20, 20, 40, GRAY);
             } break;
             case MAC: // мы в маке
             {
                 framesCounter++;
-                if (IsKeyDown(KEY_LEFT) && iluhaX > 0) {
-                    iluhaX -= playerSpeed * dt;
-                }
-                
-                else if (IsKeyDown(KEY_RIGHT) && iluhaX < screenWidth - playerWidth) {
-                    iluhaX += playerSpeed * dt;
-                }   
+                Ilya.update(dt);
         
                 for (auto& burger: objects) { // обновляем все падающие бургеры
-                    if (burger.active) {
-                        burger.y += burger.speed * dt;
-        
-                        if ((burger.y + fallingHeight >= screenHeight - playerHeight) &&
-                        (burger.x + fallingWidth >= iluhaX) &&
-                        (burger.x <= iluhaX + playerWidth)) {
-                            score++;
-                            burger.active = 0; 
-                        }
-            
-                        // Если объект улетел вниз — создаём новый
-                        // if (burger.y > screenHeight) {
-                        //     FallingObject temp_burger = CreateFallingObject(BurgerPicture);
-                        //     objects.push_back(temp_burger);
-                        // }
-                    }
+                    burger.update(dt, Ilya, score);
                 }
 
                 if (framesCounter > 90) {
                     framesCounter = 0;
-                    FallingObject temp_burger = CreateFallingObject(BurgerPicture);
+                    Food temp_burger(60, 60, BurgerPicture);
                     objects.push_back(temp_burger);
                 }
 
@@ -110,23 +71,27 @@ int main() {
                     currentScreen = GROWING;
                 }
 
+                if (score < 0) {
+                    framesCounter = 0;
+                    currentScreen = EXIT;
+                }
+
                 DrawTexture(background, 0, 0, WHITE);
                 DrawText(TextFormat("Score: %d", score), 20, 20, 30, WHITE);
-                DrawTexture(IlyaPicture, iluhaX, screenHeight - playerHeight, WHITE);
-                for (auto& burger: objects) if (burger.active) DrawTexture(burger.picture, burger.x, burger.y, WHITE);
-
+                DrawTexture(IlyaPicture, Ilya.pos.x, screenHeight - Ilya.height, WHITE);
+                for (auto& burger: objects) if (burger.active) DrawTexture(burger.picture, burger.pos.x, burger.pos.y, WHITE);
             } break;
             case GROWING:
             {   
                 framesCounter++;
                 DrawRectangle(0, 0, screenWidth, screenHeight, BLACK);
                 DrawText("HE'S GROWING", 20, 20, 50, DARKGRAY);
-                DrawTextureEx(IlyaPicture, (Vector2){screenWidth / 4, screenHeight / 4}, 0.0f, scale, WHITE);
+                Ilya.growing();
+                
                 if (framesCounter > 600) {
                     currentScreen = SURF;
                     framesCounter = 0;
                 }
-                scale += 0.01;
             } break;
             case SURF: // мы в сёрфе
             {
