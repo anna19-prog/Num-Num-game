@@ -26,9 +26,12 @@ int main() {
 
     int playerWidth = 100;
     int playerHeight = 100;
+    int objectsWidth = 60;
+    int objectsHeight = 60;
     Texture2D IlyaPicture = get_pic(playerWidth, playerHeight, "src/pictures/photoIlya.jpg"); // картинка персонажа
-    Texture2D BurgerPicture = get_pic(60, 60, "src/pictures/Burger.png"); // картинка бургера
-    Texture2D CoffeePicture = get_pic(60, 60, "src/pictures/coffee_cup.png"); // картинка сёрф кофе
+    Texture2D BurgerPicture = get_pic(objectsWidth, objectsHeight, "src/pictures/Burger.png"); // картинка бургера
+    Texture2D CoffeePicture = get_pic(objectsWidth, objectsHeight, "src/pictures/coffee_cup.png"); // картинка сёрф кофе
+    Texture2D SaladPicture = get_pic(objectsWidth, objectsHeight, "src/pictures/salad.png"); // картинка салата
     Texture2D background_mac = get_pic(screenWidth, screenHeight, "src/pictures/mac.png"); // картинка мак
     Texture2D background_surf = get_pic(screenWidth, screenHeight, "src/pictures/surf.png"); // картинка сёрф
 
@@ -36,6 +39,7 @@ int main() {
         static_cast<float>(screenHeight - playerHeight)}, IlyaPicture);
 
     int score = 0;
+    bool won = true;
     
     std::vector<Food> objects; // все наши падающие объекты
     
@@ -49,17 +53,19 @@ int main() {
             case BEGINNING:
             {
                 if (IsKeyDown(KEY_ENTER)) {
-                    currentScreen = MAC;
+                    currentScreen = RULES;
+                    framesCounter = 0;
                 }
-                DrawText("ILYA NUM-NUM GAME \n IT IS NOT FOR THE WEAK\n\neat burgers in order for Ilya to grow\n\n\npress enter to begin", 20, 20, 40, GRAY);
+                DrawText("ILYA NUM-NUM GAME \n IT IS NOT FOR THE WEAK\n\n\npress enter to begin", 20, 20, 40, GRAY);
             } break;
             case RULES:
             {
-                if (IsKeyDown(KEY_ENTER)) {
+                framesCounter++;
+                if (framesCounter > 20 && IsKeyDown(KEY_ENTER)) {
                     currentScreen = MAC;
                 }
-                DrawText("your goal is to catch the falling food and drinks", 20, 20, 40, GRAY);
-            }break;
+                DrawText("your goal is to catch the falling food and drinks\n\nbe careful with what\n you choose to eat", 20, 100, 40, GRAY);
+            } break;
             case MAC: // мы в маке
             {
                 framesCounter++;
@@ -71,11 +77,16 @@ int main() {
 
                 if (framesCounter > 90) {
                     framesCounter = 0;
-                    Food temp_burger(60, 60, BurgerPicture, 0);
-                    objects.push_back(temp_burger);
+                    if (score <= 7 || rand() % 2 == 0) { // рандомно выбираем -- салад или бургер
+                        Food temp(objectsWidth, objectsHeight, BurgerPicture, 0.0f, 1);
+                        objects.push_back(temp);
+                    } else {
+                        Food temp(objectsWidth, objectsHeight, SaladPicture, 0.0f, 0);
+                        objects.push_back(temp);
+                    }
                 }
 
-                if (score == 10) {
+                if (score == 15) {
                     framesCounter = 0;
                     currentScreen = GROWING;
                 }
@@ -83,10 +94,15 @@ int main() {
                 if (score < 0) {
                     framesCounter = 0;
                     currentScreen = EXIT;
+                    won = false;
                 }
 
                 DrawTexture(background_mac, 0, 0, WHITE);
-                DrawText(TextFormat("Score: %d", score), 20, 20, 30, WHITE);
+                if (Ilya.ate_smth_bad) {
+                    DrawText(TextFormat("Score: %d", score), 20, 20, 40, RED);
+                } else {
+                    DrawText(TextFormat("Score: %d", score), 20, 20, 30, WHITE);
+                }
                 DrawTexture(IlyaPicture, Ilya.pos.x, screenHeight - Ilya.height, WHITE);
                 for (auto& burger: objects) if (burger.active) DrawTexture(burger.picture, burger.pos.x, burger.pos.y, WHITE);
             } break;
@@ -117,11 +133,11 @@ int main() {
 
                 if (framesCounter > 90) {
                     framesCounter = 0;
-                    Food temp_coffee(60, 60, CoffeePicture, 50.0f);
+                    Food temp_coffee(objectsWidth, objectsHeight, CoffeePicture, 50.0f, 1);
                     objects.push_back(temp_coffee);
                 }
 
-                if (score == 25) {
+                if (score == 30) {
                     framesCounter = 0;
                     currentScreen = POKRA;
                 }
@@ -129,6 +145,7 @@ int main() {
                 if (score < 0) {
                     framesCounter = 0;
                     currentScreen = EXIT;
+                    won = false;
                 }
 
                 DrawTexture(background_surf, 0, 0, WHITE);
@@ -156,6 +173,11 @@ int main() {
                     running = false;
                 }
                 DrawText("GAME OVER", 20, 20, 40, DARKGREEN);
+                if (won) {
+                    DrawText("YOU DID IT!!", 20, 80, 50, BLUE);
+                } else {
+                    DrawText("YOU LOST", 20, 80, 50, RED);
+                }
             }
             default: break;
         }

@@ -24,6 +24,7 @@ class Player : public Object
 {
 public:
     float scale = 0.01;
+    bool ate_smth_bad = 0;
 
     Player(float s, int w, int h, Vector2 p, Texture pic);
 	void update(float delta_time);
@@ -35,7 +36,8 @@ class Food : public Object
 public:
     bool active;
     float accelaration; // ускорение которое будет придавать кофе
+    bool good;
 
-    Food(int w, int h, Texture2D pic, float a);
+    Food(int w, int h, Texture2D pic, float a, bool g);
     void update(float delta_time, Player& Ilya, int& score);
 };
