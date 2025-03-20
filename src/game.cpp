@@ -1,13 +1,14 @@
 #include "game.hpp"
 
 
-Player::Player(float s, int w, int h, Vector2 p, Texture pic) : Object(w, h, pic) 
+Player::Player(float s, int w, int h, Vector2 p, Texture pic, float a) : Object(w, h, pic) 
 {
     speed = s;
     width = w;
     height = h;
     pos = p;
     picture = pic;
+    accelaration = a;
 }
 
 void Player::update(float delta_time)
@@ -22,11 +23,17 @@ void Player::update(float delta_time)
 }
 
  void Player::growing() {
-     DrawTextureEx(picture, (Vector2){0, 0}, 0.0f, scale, WHITE);
-     scale+=0.03;
+     DrawTextureEx(picture, (Vector2){screenWidth / 2 - width * scale / 2, screenHeight / 2 - height * scale / 2}, 0.0f, scale, WHITE);
+     scale += 0.03;
  }
 
- Food::Food(int w, int h, Texture2D pic, float a, bool g) : Object(w, h, pic) 
+ void Player::speeding(float delta_time) {
+    pos.x += speed * delta_time;
+    speed += accelaration;
+    DrawTexture(picture, pos.x, screenHeight / 2, WHITE);
+ }
+
+ Food::Food(int w, int h, Texture2D pic, bool g) : Object(w, h, pic) 
  {
     speed = rand() % 100 + 200.0f;
     width = w;
@@ -34,7 +41,6 @@ void Player::update(float delta_time)
     pos = {static_cast<float>(rand() % (screenWidth - width)), 0};
     picture = pic;
     active = 1;
-    accelaration = a;
     good = g;
  }
 
@@ -54,7 +60,7 @@ void Player::update(float delta_time)
             }
             
             active = 0;
-            Ilya.speed += accelaration; 
+            Ilya.speed += Ilya.accelaration; 
         }
 
         if (pos.y > screenHeight && active) {
