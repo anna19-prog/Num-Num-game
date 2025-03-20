@@ -38,6 +38,7 @@ class Food : public Object
 public:
     bool active;
     bool good;
+    Sound coin = LoadSound("src/sounds/coin.wav");
 
     Food(int w, int h, Texture2D pic, bool g);
     void update(float delta_time, Player& Ilya, int& score);

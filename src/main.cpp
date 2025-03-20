@@ -1,6 +1,5 @@
 #include "raylib.h"
 #include <iostream>
-#include <string>
 #include <vector>
 #include <ctime> //используем эту библиотеку так как встроенная функция rand выдает псевдослучайные числа,
                 // которые на самом деле они и те же (мы же устанавливаем нулевое стартовое число и каждай раз получаем разный рандом srand(time(0));)
@@ -21,15 +20,18 @@ int main() {
     typedef enum GameScreen { BEGINNING, RULES, MAC, GROWING, SURF, SPEEDING, POKRA, EXIT } GameScreen;
     InitWindow(screenWidth, screenHeight, "kto kak rabotaet, tot tak i est"); // минута философии
     GameScreen currentScreen = BEGINNING;
+    InitAudioDevice();
+    Sound ending = LoadSound("src/sounds/ending.wav"); 
     SetTargetFPS(60);
     long long framesCounter = 0;
 
-    int playerWidth = 100;
-    int playerHeight = 100;
-    int objectsWidth = 60;
-    int objectsHeight = 60;
+    int playerWidth = screenHeight / 6;
+    int playerHeight = screenHeight / 6;
+    int objectsWidth = screenHeight / 10;
+    int objectsHeight = screenHeight / 10;
     Texture2D IlyaPicture = get_pic(playerWidth, playerHeight, "src/pictures/photoIlya.jpg"); // картинка персонажа
     Texture2D WinPicture = get_pic(screenWidth / 2, screenHeight / 2, "src/pictures/meoow.png");
+    Texture2D LostPicture = get_pic(screenWidth / 2, screenHeight / 2, "src/pictures/sad_kitten.png");
     Texture2D BurgerPicture = get_pic(objectsWidth, objectsHeight, "src/pictures/Burger.png"); // картинка бургера
     Texture2D CoffeePicture = get_pic(objectsWidth, objectsHeight, "src/pictures/coffee_cup.png"); // картинка сёрф кофе
     Texture2D SaladPicture = get_pic(objectsWidth, objectsHeight, "src/pictures/salad.png"); // картинка салата
@@ -60,7 +62,8 @@ int main() {
                     currentScreen = RULES;
                     framesCounter = 0;
                 }
-                DrawText("ILYA NUM-NUM GAME \n IT IS NOT FOR THE WEAK\n\n\npress enter to begin", 20, 20, 40, GRAY);
+                DrawText("ILYA NUM-NUM GAME \n IT IS NOT FOR THE WEAK\n\n\npress enter to begin",
+                     screenWidth / 40, screenHeight / 30, screenWidth / 20, GRAY);
             } break;
             case RULES:
             {
@@ -68,7 +71,8 @@ int main() {
                 if (framesCounter > 20 && IsKeyDown(KEY_ENTER)) {
                     currentScreen = MAC;
                 }
-                DrawText("your goal is to catch the falling food and drinks\n\nbe careful with what\n you choose to eat", 20, 100, 40, GRAY);
+                DrawText("your goal is to catch the falling food and drinks\n\nbe careful with what\n you choose to eat",
+                     screenWidth / 40, screenHeight / 6, screenWidth / 20, GRAY);
             } break;
             case MAC: // мы в маке
             {
@@ -93,6 +97,7 @@ int main() {
                 if (score == wanted_scores[0]) {
                     framesCounter = 0;
                     currentScreen = GROWING;
+                    PlaySound(ending);
                 }
 
                 if (score < 0) {
@@ -103,11 +108,11 @@ int main() {
 
                 DrawTexture(background_mac, 0, 0, WHITE);
                 if (Ilya.ate_smth_bad) {
-                    DrawText(TextFormat("Score: %d", score), 20, 20, 40, RED);
+                    DrawText(TextFormat("Score: %d", score), screenWidth / 40, screenHeight / 30, screenWidth / 15, RED);
                 } else {
-                    DrawText(TextFormat("Score: %d", score), 20, 20, 30, WHITE);
+                    DrawText(TextFormat("Score: %d", score), screenWidth / 40, screenHeight / 30, screenWidth / 20, WHITE);
                 }
-                DrawTexture(IlyaPicture, Ilya.pos.x, screenHeight - Ilya.height, WHITE);
+                DrawTexture(Ilya.picture, Ilya.pos.x, screenHeight - Ilya.height, WHITE);
                 for (auto& burger: objects) if (burger.active) DrawTexture(burger.picture, burger.pos.x, burger.pos.y, WHITE);
             } break;
             case GROWING:
@@ -115,7 +120,7 @@ int main() {
                 framesCounter++;
                 DrawRectangle(0, 0, screenWidth, screenHeight, BLACK);
                 Ilya.growing();
-                DrawText("HE'S GROWING", 20, 20, 50, DARKGRAY);
+                DrawText("HE'S GROWING", screenWidth / 40, screenHeight / 30, screenWidth / 10, DARKGRAY);
                 
                 if (framesCounter > 600) {
                     currentScreen = SURF;
@@ -148,6 +153,7 @@ int main() {
                     Ilya.pos = (Vector2){static_cast<float>(-playerWidth - 10), screenHeight / 2};
                     objects.clear();
                     Ilya.speed = 150.0f;
+                    PlaySound(ending);
                 }
 
                 if (score < 0) {
@@ -157,7 +163,11 @@ int main() {
                 }
 
                 DrawTexture(background_surf, 0, 0, WHITE);
-                DrawText(TextFormat("Score: %d", score), 20, 20, 30, WHITE);
+                if (Ilya.ate_smth_bad) {
+                    DrawText(TextFormat("Score: %d", score), screenWidth / 40, screenHeight / 30, screenWidth / 15, RED);
+                } else {
+                    DrawText(TextFormat("Score: %d", score), screenWidth / 40, screenHeight / 30, screenWidth / 20, WHITE);
+                }
                 DrawTexture(Ilya.picture, Ilya.pos.x, screenHeight - Ilya.height, WHITE);
                 for (auto& coffee: objects) if (coffee.active) DrawTexture(coffee.picture, coffee.pos.x, coffee.pos.y, WHITE);
 
@@ -167,7 +177,7 @@ int main() {
             {
                 framesCounter++;
                 DrawRectangle(0, 0, screenWidth, screenHeight, BLACK);
-                DrawText("HE'S SPEEDING", 20, 20, 50, DARKGRAY);
+                DrawText("HE'S SPEEDING", screenWidth / 40, screenHeight / 30, screenWidth / 10, DARKGRAY);
                 Ilya.speeding(dt);
                 
 
@@ -205,32 +215,32 @@ int main() {
                     framesCounter = 0;
                     currentScreen = EXIT;
                     won = false;
+                    PlaySound(ending);
                 }
 
                 DrawTexture(background_pokra, 0, 0, WHITE);
                 if (Ilya.ate_smth_bad) {
-                    DrawText(TextFormat("Score: %d", score), 20, 20, 30, RED);
+                    DrawText(TextFormat("Score: %d", score), 20, 20, screenWidth / 15, RED);
                 } else {
-                    DrawText(TextFormat("Score: %d", score), 20, 20, 30, BLACK);
+                    DrawText(TextFormat("Score: %d", score), 20, 20, screenWidth / 20, BLACK);
                 }
-                DrawText(TextFormat("Score: %d", score), 20, 20, 30, BLACK);
-                DrawTexture(IlyaPicture, Ilya.pos.x, screenHeight - Ilya.height, WHITE);
+                DrawTexture(Ilya.picture, Ilya.pos.x, screenHeight - Ilya.height, WHITE);
                 for (auto& coffee: objects) if (coffee.active) DrawTexture(coffee.picture, coffee.pos.x, coffee.pos.y, WHITE);
 
 
             } break;
             case EXIT: //гейм овер
             {
-                framesCounter++;
-                if (framesCounter > 300) {
+                if (IsKeyDown(KEY_ENTER)) {
                     running = false;
                 }
-                DrawText("GAME OVER", 20, 20, 40, DARKGREEN);
+                DrawText("GAME OVER", screenWidth / 40, screenHeight / 30, screenWidth / 20, DARKGREEN);
                 if (won) {
-                    DrawText("YOU DID IT!!", 20, 80, 50, BLUE);
+                    DrawText("YOU DID IT!!", screenWidth / 40, screenHeight / 10, screenWidth / 15, BLUE);
                     DrawTexture(WinPicture, screenWidth / 2, screenHeight / 2, WHITE);
                 } else {
-                    DrawText("YOU LOST", 20, 80, 50, RED);
+                    DrawText("YOU LOST", screenWidth / 40, screenHeight / 10, screenWidth / 15, RED);
+                    DrawTexture(LostPicture, screenWidth / 2, screenHeight / 2, WHITE);
                 }
             }
             default: break;
@@ -238,6 +248,7 @@ int main() {
         EndDrawing();
     }
 
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }

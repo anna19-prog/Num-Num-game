@@ -54,6 +54,7 @@ void Player::update(float delta_time)
             if (good) {
                 score++;
                 Ilya.ate_smth_bad = 0;
+                PlaySound(coin);
             } else {
                 score -= 2;
                 Ilya.ate_smth_bad = 1;
