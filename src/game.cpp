@@ -35,10 +35,10 @@ void Player::update(float delta_time)
 
  Food::Food(int w, int h, Texture2D pic, bool g) : Object(w, h, pic) 
  {
-    speed = rand() % 100 + 200.0f;
+    speed = GetRandomValue(0, 100) + 200.0f;
     width = w;
     height = h;
-    pos = {static_cast<float>(rand() % (screenWidth - width)), 0};
+    pos = (Vector2){static_cast<float>(rand() % (screenWidth - width)), 0};
     picture = pic;
     active = 1;
     good = g;
