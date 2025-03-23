@@ -40,6 +40,7 @@ public:
     bool active;
     bool good;
     Sound coin = LoadSound("src/sounds/coin.wav");
+    Sound lost_a_point = LoadSound("src/sounds/bad.mp3");
 
     Food(int w, int h, Texture2D pic, bool g);
     void update(float delta_time, Player& Ilya, int& score);
