@@ -58,6 +58,7 @@ void Player::update(float delta_time)
             } else {
                 score -= 2;
                 Ilya.ate_smth_bad = 1;
+                PlaySound(lost_a_point);
             }
             
             active = 0;
@@ -68,6 +69,7 @@ void Player::update(float delta_time)
             if (good) {
                 score--;
                 Ilya.ate_smth_bad = 1;
+                PlaySound(lost_a_point);
             }
             active = 0;
         }

@@ -19,6 +19,8 @@ int main() {
     GameScreen currentScreen = BEGINNING;
     InitAudioDevice();
     Sound ending = LoadSound("src/sounds/ending.wav"); 
+    Sound winning_sound = LoadSound("src/sounds/win.wav");
+    Sound losing_sound = LoadSound("src/sounds/mario.wav");
     SetTargetFPS(60);
     long long framesCounter = 0;
 
@@ -75,7 +77,9 @@ int main() {
                         currentScreen = MAC;
                     }
                     DrawText("your goal is to catch the falling food and drinks\n\nbe careful with what\n you choose to eat",
-                        screenWidth / 40, screenHeight / 6, screenWidth / 20, GRAY);
+                        screenWidth / 40, screenHeight / 7, screenWidth / 20, GRAY);
+                    DrawText("use <- -> buttons to move Ilya\n and space to pause the game", 
+                        screenWidth / 40, screenHeight / 2, screenWidth / 20, GRAY);
                 } break;
                 case MAC: // мы в маке
                 {
@@ -107,6 +111,7 @@ int main() {
                         framesCounter = 0;
                         currentScreen = EXIT;
                         won = false;
+                        PlaySound(losing_sound);
                     }
 
                     DrawTexture(background_mac, 0, 0, WHITE);
@@ -125,7 +130,7 @@ int main() {
                     Ilya.growing();
                     DrawText("HE'S GROWING", screenWidth / 40, screenHeight / 30, screenWidth / 10, DARKGRAY);
                     
-                    if (framesCounter > 600) {
+                    if (framesCounter > 200) {
                         currentScreen = SURF;
                         Ilya.pos = (Vector2){static_cast<float>(screenWidth / 2 - playerWidth / 2), 
                             static_cast<float>(screenHeight - playerHeight)};
@@ -163,6 +168,7 @@ int main() {
                         framesCounter = 0;
                         currentScreen = EXIT;
                         won = false;
+                        PlaySound(losing_sound);
                     }
 
                     DrawTexture(background_surf, 0, 0, WHITE);
@@ -212,13 +218,14 @@ int main() {
                     if (score == wanted_scores[2]) {
                         framesCounter = 0;
                         currentScreen = EXIT;
+                        PlaySound(winning_sound);
                     }
 
                     if (score < 0) {
                         framesCounter = 0;
                         currentScreen = EXIT;
                         won = false;
-                        PlaySound(ending);
+                        PlaySound(losing_sound);
                     }
 
                     DrawTexture(background_pokra, 0, 0, WHITE);
